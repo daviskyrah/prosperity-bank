@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Prosperity Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: #0f172a;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+        
+        .page {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+            min-height: 100vh;
+            padding-bottom: 100px;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-slide-up {
+            animation: slideUp 0.6s ease-out forwards;
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .card-gradient {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #06b6d4 100%);
+        }
+        
+        .gold-gradient {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+        }
+        
+        .input-field {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #3b82f6;
+            outline: none;
+        }
+        
+        .loader {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item.active {
+            color: #3b82f6;
+        }
+        
+        .transaction-item {
+            transition: all 0.2s ease;
+        }
+        
+        .transaction-item:active {
+            transform: scale(0.98);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .btn-press:active {
+            transform: scale(0.95);
+        }
+        
+        .hide-balance {
+            filter: blur(8px);
+            user-select: none;
+        }
+        
+        .ios-install-banner {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 16px;
+            z-index: 1000;
+            display: none;
+            max-width: 90%;
+            width: 350px;
+        }
+        
+        .ios-install-banner.show {
+            display: block;
+            animation: slideUpBanner 0.5s ease;
+        }
+        
+        @keyframes slideUpBanner {
+            from { transform: translate(-50%, 100px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        
+        .chart-bar {
+            transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .success-check {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #10b981;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: scaleIn 0.5s ease;
+        }
+        
+        @keyframes scaleIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+        
+        .ripple {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ripple::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .ripple:active::after {
+            width: 300px;
+            height: 300px;
+        }
+    </style>
+</head>
+<body class="text-white antialiased">
+
+    <!-- Status Bar -->
+    <div class="fixed top-0 left-0 right-0 z-50 px-6 py-3 flex justify-between items-center text-xs font-medium text-gray-400 bg-gradient-to-b from-black/80 to-transparent backdrop-blur-sm">
+        <span id="clock">9:41</span>
+        <div class="flex items-center gap-1">
+            <i class="fas fa-signal"></i>
+            <i class="fas fa-wifi ml-1"></i>
+            <i class="fas fa-battery-full ml-1"></i>
+        </div>
+    </div>
+
+    <!-- LOGIN PAGE -->
+    <div id="loginPage" class="page active pt-16 px-6 max-w-md mx-auto">
+        <div class="flex flex-col items-center justify-center min-h-[80vh]">
+            <!-- Logo -->
+            <div class="mb-8 animate-slide-up">
+                <div class="w-24 h-24 rounded-3xl gold-gradient flex items-center justify-center shadow-2xl shadow-yellow-500/20 mb-4 mx-auto">
+                    <i class="fas fa-university text-4xl text-white"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-center bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">Prosperity Bank</h1>
+                <p class="text-gray-400 text-center mt-2 text-sm">Your Wealth, Our Priority</p>
+            </div>
+
+            <!-- Login Form -->
+            <div class="w-full space-y-4 animate-slide-up" style="animation-delay: 0.1s">
+                <div>
+                    <label class="text-sm text-gray-400 mb-2 block">User ID</label>
+                    <input type="text" id="userId" placeholder="Enter User ID" 
+                           class="input-field w-full px-4 py-4 rounded-xl text-white placeholder-gray-500">
+                </div>
+                
+                <div>
+                    <label class="text-sm text-gray-400 mb-2 block">Password</label>
+                    <div class="relative">
+                        <input type="password" id="password" placeholder="Enter Password" 
+                               class="input-field w-full px-4 py-4 rounded-xl text-white placeholder-gray-500 pr-12">
+                        <button onclick="togglePassword()" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+                            <i id="passIcon" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center text-sm">
+                    <label class="flex items-center gap-2 text-gray-400 cursor-pointer">
+                        <input type="checkbox" class="rounded bg-gray-700 border-gray-600 text-blue-500">
+                        <span>Remember me</span>
+                    </label>
+                    <a href="#" onclick="showToast('Contact support to reset password')" class="text-blue-400 hover:text-blue-300">Forgot Password?</a>
+                </div>
+
+                <button onclick="login()" id="loginBtn" 
+                        class="w-full gold-gradient text-white font-bold py-4 rounded-xl mt-6 btn-press ripple shadow-lg shadow-yellow-500/20 flex items-center justify-center gap-2">
+                    <span id="loginText">Login</span>
+                    <div id="loginLoader" class="loader hidden"></div>
+                </button>
+
+                <div class="text-center mt-6">
+                    <p class="text-gray-500 text-sm">Don't have an account? 
+                        <a href="#" onclick="showToast('Visit nearest branch to open account')" class="text-yellow-400 font-medium">Sign Up</a>
+                    </p>
+                </div>
+
+                <!-- Biometric Option -->
+                <div class="flex justify-center mt-8">
+                    <button onclick="showToast('Biometric authentication coming soon')" class="w-16 h-16 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                        <i class="fas fa-fingerprint text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Security Footer -->
+            <div class="mt-12 text-center">
+                <div class="flex items-center justify-center gap-2 text-gray-500 text-xs mb-2">
+                    <i class="fas fa-shield-alt text-green-400"></i>
+                    <span>256-bit SSL Encryption</span>
+                </div>
+                <p class="text-gray-600 text-xs">© 2026 Prosperity Bank. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- HOME PAGE -->
+    <div id="homePage" class="page pt-12 px-6 max-w-md mx-auto">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6 animate-slide-up">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-full gold-gradient flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-yellow-500/20">
+                    DK
+                </div>
+                <div>
+                    <p class="text-gray-400 text-sm">Welcome back,</p>
+                    <h2 class="font-bold text-lg">Davis Kyrah</h2>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="logout()" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-white">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+                <button class="w-10 h-10 rounded-full glass-panel flex items-center justify-center relative">
+                    <i class="fas fa-bell text-gray-300"></i>
+                    <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Balance Card -->
+        <div class="relative mb-6 animate-slide-up" style="animation-delay: 0.1s">
+            <div class="card-gradient rounded-3xl p-6 relative overflow-hidden shadow-2xl shadow-blue-500/20">
+                <div class="absolute -top-20 -right-20 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                <div class="absolute -bottom-20 -left-20 w-40 h-40 bg-cyan-400/20 rounded-full blur-3xl"></div>
+                
+                <div class="relative z-10">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <p class="text-blue-100 text-sm mb-1">Total Balance</p>
+                            <div class="flex items-center gap-2">
+                                <h1 id="balanceAmount" class="text-4xl font-bold text-white tracking-tight">$94,000.00</h1>
+                                <button onclick="toggleBalance()" class="text-blue-200 hover:text-white transition-colors">
+                                    <i id="eyeIcon" class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="w-10 h-6 bg-white/20 rounded-full flex items-center px-1 cursor-pointer" onclick="showToast('Card locked')">
+                            <div class="w-4 h-4 bg-white rounded-full shadow-lg"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-3 mb-6">
+                        <div class="bg-white/10 rounded-2xl px-4 py-3 flex-1 backdrop-blur-sm">
+                            <div class="flex items-center gap-2 text-emerald-300 text-sm mb-1">
+                                <i class="fas fa-arrow-down text-xs"></i>
+                                <span>Income</span>
+                            </div>
+                            <p class="font-bold text-lg">$12,450</p>
+                        </div>
+                        <div class="bg-white/10 rounded-2xl px-4 py-3 flex-1 backdrop-blur-sm">
+                            <div class="flex items-center gap-2 text-rose-300 text-sm mb-1">
+                                <i class="fas fa-arrow-up text-xs"></i>
+                                <span>Expense</span>
+                            </div>
+                            <p class="font-bold text-lg">$3,280</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <div class="text-xs text-blue-100">
+                            <span class="opacity-60">Premium Card</span>
+                            <p class="font-mono mt-0.5 tracking-wider">•••• 8888</p>
+                        </div>
+                        <div class="flex gap-1">
+                            <div class="w-8 h-8 rounded-full bg-red-500/80 flex items-center justify-center text-xs text-white font-bold">V</div>
+                            <div class="w-8 h-8 rounded-full bg-yellow-500/80 -ml-4 flex items-center justify-center text-xs text-white font-bold">P</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-4 gap-4 mb-6 animate-slide-up" style="animation-delay: 0.2s">
+            <button onclick="navigateTo('sendPage')" class="flex flex-col items-center gap-2 group btn-press">
+                <div class="w-14 h-14 rounded-2xl glass-panel flex items-center justify-center text-blue-400 group-active:scale-95 transition-transform shadow-lg">
+                    <i class="fas fa-paper-plane text-xl"></i>
+                </div>
+                <span class="text-xs text-gray-400">Send</span>
+            </button>
+            <button onclick="navigateTo('requestPage')" class="flex flex-col items-center gap-2 group btn-press">
+                <div class="w-14 h-14 rounded-2xl glass-panel flex items-center justify-center text-emerald-400 group-active:scale-95 transition-transform shadow-lg">
+                    <i class="fas fa-wallet text-xl"></i>
+                </div>
+                <span class="text-xs text-gray-400">Request</span>
+            </button>
+            <button onclick="navigateTo('exchangePage')" class="flex flex-col items-center gap-2 group btn-press">
+                <div class="w-14 h-14 rounded-2xl glass-panel flex items-center justify-center text-purple-400 group-active:scale-95 transition-transform shadow-lg">
+                    <i class="fas fa-exchange-alt text-xl"></i>
+                </div>
+                <span class="text-xs text-gray-400">Exchange</span>
+            </button>
+            <button onclick="navigateTo('morePage')" class="flex flex-col items-center gap-2 group btn-press">
+                <div class="w-14 h-14 rounded-2xl glass-panel flex items-center justify-center text-orange-400 group-active:scale-95 transition-transform shadow-lg">
+                    <i class="fas fa-ellipsis-h text-xl"></i>
+                </div>
+                <span class="text-xs text-gray-400">More</span>
+            </button>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="animate-slide-up" style="animation-delay: 0.3s">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg">Recent Transactions</h3>
+                <button onclick="showToast('Full history coming soon')" class="text-sm text-blue-400 font-medium">See All</button>
+            </div>
+            
+            <div class="space-y-3">
+                <div onclick="showTransactionDetail('Amazon Purchase', '-$124.00', 'Shopping')" class="transaction-item glass-panel rounded-2xl p-4 flex items-center justify-between cursor-pointer">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center text-white">
+                            <i class="fab fa-amazon text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold">Amazon Purchase</p>
+                            <p class="text-sm text-gray-400">Shopping • Today</p>
+                        </div>
+                    </div>
+                    <span class="font-bold text-rose-400">-$124.00</span>
+                </div>
+                
+                <div onclick="showTransactionDetail('Salary Deposit', '+$8,500.00', 'Income')" class="transaction-item glass-panel rounded-2xl p-4 flex items-center justify-between cursor-pointer">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white">
+                            <i class="fas fa-arrow-down text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold">Salary Deposit</p>
+                            <p class="text-sm text-gray-400">Income • Yesterday</p>
+                        </div>
+                    </div>
+                    <span class="font-bold text-emerald-400">+$8,500.00</span>
+                </div>
+                
+                <div onclick="showTransactionDetail('Nobu Restaurant', '-$285.50', 'Dining')" class="transaction-item glass-panel rounded-2xl p-4 flex items-center justify-between cursor-pointer">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white">
+                            <i class="fas fa-utensils text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold">Nobu Restaurant</p>
+                            <p class="text-sm text-gray-400">Dining • Yesterday</p>
+                        </div>
+                    </div>
+                    <span class="font-bold text-rose-400">-$285.50</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEND MONEY PAGE -->
+    <div id="sendPage" class="page pt-12 px-6 max-w-md mx-auto">
+        <div class="flex items-center gap-4 mb-6">
+            <button onclick="navigateTo('homePage')" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center btn-press">
+                <i class="fas fa-arrow-left text-gray-300"></i>
+            </button>
+            <h1 class="text-2xl font-bold">Send Money</h1>
+        </div>
+
+        <div class="glass-panel rounded-2xl p-6 mb-6">
+            <label class="text-sm text-gray-400 mb-2 block">Amount</label>
+            <div class="relative mb-4">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl text-gray-400">$</span>
+                <input type="number" id="sendAmount" placeholder="0.00" 
+                       class="input-field w-full pl-12 pr-4 py-4 rounded-xl text-3xl font-bold text-white placeholder-gray-600">
+            </div>
+            
+            <label class="text-sm text-gray-400 mb-2 block">Recipient</label>
+            <input type="text" placeholder="Account number or email" 
+                   class="input-field w-full px-4 py-4 rounded-xl text-white placeholder-gray-500 mb-4">
+            
+            <label class="text-sm text-gray-400 mb-2 block">Note (Optional)</label>
+            <input type="text" placeholder="What's this for?" 
+                   class="input-field w-full px-4 py-4 rounded-xl text-white placeholder-gray-500 mb-6">
+            
+            <button onclick="processTransaction('send')" id="sendBtn" class="w-full card-gradient text-white font-bold py-4 rounded-xl btn-press ripple flex items-center justify-center gap-2">
+                <span id="sendText">Send Money</span>
+                <div id="sendLoader" class="loader hidden"></div>
+            </button>
+        </div>
+
+        <h3 class="font-bold mb-4">Recent Recipients</h3>
+        <div class="flex gap-4 overflow-x-auto pb-4 scroll-hide">
+            <div onclick="selectRecipient('John Doe')" class="flex flex-col items-center gap-2 min-w-[80px] cursor-pointer btn-press">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-xl">JD</div>
+                <span class="text-xs text-gray-400">John Doe</span>
+            </div>
+            <div onclick="selectRecipient('Sarah Smith')" class="flex flex-col items-center gap-2 min-w-[80px] cursor-pointer btn-press">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center text-white font-bold text-xl">SS</div>
+                <span class="text-xs text-gray-400">Sarah Smith</span>
+            </div>
+            <div onclick="selectRecipient('Mike Johnson')" class="flex flex-col items-center gap-2 min-w-[80px] cursor-pointer btn-press">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-bold text-xl">MJ</div>
+                <span class="text-xs text-gray-400">Mike Johnson</span>
+            </div>
+            <div onclick="selectRecipient('Add New')" class="flex flex-col items-center gap-2 min-w-[80px] cursor-pointer btn-press">
+                <div class="w-16 h-16 rounded-full glass-panel flex items-center justify-center text-gray-400">
+                    <i class="fas fa-plus text-xl"></i>
+                </div>
+                <span class="text-xs text-gray-400">Add New</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- REQUEST MONEY PAGE -->
+    <div id="requestPage" class="page pt-12 px-6 max-w-md mx-auto">
+        <div class="flex items-center gap-4 mb-6">
+            <button onclick="navigateTo('homePage')" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center btn-press">
+                <i class="fas fa-arrow-left text-gray-300"></i>
+            </button>
+            <h1 class="text-2xl font-bold">Request Money</h1>
+        </div>
+
+        <div class="glass-panel rounded-2xl p-6 mb-6">
+            <label class="text-sm text-gray-400 mb-2 block">Amount</label>
+            <div class="relative mb-4">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl text-gray-400">$</span>
+                <input type="number" id="requestAmount" placeholder="0.00" 
+                       class="input-field w-full pl-12 pr-4 py-4 rounded-xl text-3xl font-bold text-white placeholder-gray-600">
+            </div>
+            
+            <label class="text-sm text-gray-400 mb-2 block">From</label>
+            <input type="text" placeholder="Request from (email or phone)" 
+                   class="input-field w-full px-4 py-4 rounded-xl text-white placeholder-gray-500 mb-4">
+            
+            <label class="text-sm text-gray-400 mb-2 block">Note</label>
+            <input type="text" placeholder="Requesting for..." 
+                   class="input-field w-full px-4 py-4 rounded-xl text-white placeholder-gray-500 mb-6">
+            
+            <button onclick="processTransaction('request')" id="requestBtn" class="w-full gold-gradient text-white font-bold py-4 rounded-xl btn-press ripple flex items-center justify-center gap-2">
+                <span id="requestText">Request Money</span>
+                <div id="requestLoader" class="loader hidden"></div>
+            </button>
+        </div>
+
+        <div class="glass-panel rounded-2xl p-4">
+            <h4 class="font-semibold mb-3 text-sm text-gray-400">Pending Requests</h4>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm">AK</div>
+                        <div>
+                            <p class="font-medium text-sm">Alex Kim</p>
+                            <p class="text-xs text-gray-500">Requested $250</p>
+                        </div>
+                    </div>
+                    <button onclick="showToast('Reminder sent')" class="text-xs bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full">Remind</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EXCHANGE PAGE -->
+    <div id="exchangePage" class="page pt-12 px-6 max-w-md mx-auto">
+        <div class="flex items-center gap-4 mb-6">
+            <button onclick="navigateTo('homePage')" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center btn-press">
+                <i class="fas fa-arrow-left text-gray-300"></i>
+            </button>
+            <h1 class="text-2xl font-bold">Exchange</h1>
+        </div>
+
+        <div class="glass-panel rounded-2xl p-6 mb-6">
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex-1">
+                    <label class="text-xs text-gray-400 mb-1 block">From</label>
+                    <select class="input-field w-full px-3 py-3 rounded-lg text-white bg-transparent">
+                        <option class="bg-gray-800">USD - US Dollar</option>
+                        <option class="bg-gray-800">EUR - Euro</option>
+                        <option class="bg-gray-800">GBP - British Pound</option>
+                    </select>
+                </div>
+                <button onclick="showToast('Currencies swapped')" class="mx-4 w-10 h-10 rounded-full glass-panel flex items-center justify-center text-blue-400 btn-press">
+                    <i class="fas fa-exchange-alt"></i>
+                </button>
+                <div class="flex-1">
+                    <label class="text-xs text-gray-400 mb-1 block">To</label>
+                    <select class="input-field w-full px-3 py-3 rounded-lg text-white bg-transparent">
+                        <option class="bg-gray-800">EUR - Euro</option>
+                        <option class="bg-gray-800">USD - US Dollar</option>
+                        <option class="bg-gray-800">GBP - British Pound</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="relative mb-6">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-xl text-gray-400">$</span>
+                <input type="number" placeholder="1,000" 
+                       class="input-field w-full pl-12 pr-4 py-4 rounded-xl text-2xl font-bold text-white placeholder-gray-600">
+            </div>
+
+            <div class="bg-white/5 rounded-xl p-4 mb-6">
+                <div class="flex justify-between text-sm mb-2">
+                    <span class="text-gray-400">Exchange Rate</span>
+                    <span class="text-white">1 USD = 0.92 EUR</span>
+                </div>
+                <div class="flex justify-between text-sm mb-2">
+                    <span class="text-gray-400">Fee</span>
+                    <span class="text-white">$2.50</span>
+                </div>
+                <div class="flex justify-between font-bold text-lg pt-2 border-t border-white/10">
+                    <span class="text-gray-400">You Get</span>
+                    <span class="text-emerald-400">€917.50</span>
+                </div>
+            </div>
+
+            <button onclick="processTransaction('exchange')" id="exchangeBtn" class="w-full card-gradient text-white font-bold py-4 rounded-xl btn-press ripple flex items-center justify-center gap-2">
+                <span id="exchangeText">Exchange Now</span>
+                <div id="exchangeLoader" class="loader hidden"></div>
+            </button>
+        </div>
+
+        <h3 class="font-bold mb-4">Popular Rates</h3>
+        <div class="space-y-3">
+            <div class="glass-panel rounded-xl p-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">🇪🇺</span>
+                    <div>
+                        <p class="font-semibold">EUR</p>
+                        <p class="text-xs text-gray-500">Euro</p>
+                    </div>
+                </div>
+                <span class="font-bold text-emerald-400">+0.24%</span>
+            </div>
+            <div class="glass-panel rounded-xl p-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">🇬🇧</span>
+                    <div>
+                        <p class="font-semibold">GBP</p>
+                        <p class="text-xs text-gray-500">British Pound</p>
+                    </div>
+                </div>
+                <span class="font-bold text-rose-400">-0.12%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MORE PAGE -->
+    <div id="morePage" class="page pt-12 px-6 max-w-md mx-auto">
+        <div class="flex items-center gap-4 mb-6">
+            <button onclick="navigateTo('homePage')" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center btn-press">
+                <i class="fas fa-arrow-left text-gray-300"></i>
+            </button>
+            <h1 class="text-2xl font-bold">More Services</h1>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <button onclick="showToast('Bill Pay coming soon')" class="glass-panel rounded-2xl p-6 flex flex-col items-center gap-3 btn-press">
+                <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+                    <i class="fas fa-file-invoice-dollar text-xl"></i>
+                </div>
+                <span class="font-semibold text-sm">Pay Bills</span>
+            </button>
+            <button onclick="showToast('Airtime purchase coming soon')" class="glass-panel rounded-2xl p-6 flex flex-col items-center gap-3 btn-press">
+                <div class="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400">
+                    <i class="fas fa-mobile-alt text-xl"></i>
+                </div>
+                <span class="font-semibold text-sm">Airtime</span>
+            </button>
+            <button onclick="showToast('Savings goals coming soon')" class="glass-panel rounded-2xl p-6 flex flex-col items-center gap-3 btn-press">
+                <div class="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <i class="fas fa-piggy-bank text-xl"></i>
+                </div>
+                <span class="font-semibold text-sm">Savings</span>
+            </button>
+            <button onclick="showToast('Investments coming soon')" class="glass-panel rounded-2xl p-6 flex flex-col items-center gap-3 btn-press">
+                <div class="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400">
+                    <i class="fas fa-chart-line text-xl"></i>
+                </div>
+                <span class="font-semibold text-sm">Invest</span>
+            </button>
+        </div>
+
+        <div class="glass-panel rounded-2xl overflow-hidden">
+            <button onclick="showToast('Settings opened')" class="w-full p-4 flex items-center justify-between border-b border-white/5 btn-press">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-cog text-gray-400"></i>
+                    <span>Settings</span>
+                </div>
+                <i class="fas fa-chevron-right text-gray-600 text-sm"></i>
+            </button>
+            <button onclick="showToast('Support chat opened')" class="w-full p-4 flex items-center justify-between border-b border-white/5 btn-press">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-headset text-gray-400"></i>
+                    <span>Support</span>
+                </div>
+                <i class="fas fa-chevron-right text-gray-600 text-sm"></i>
+            </button>
+            <button onclick="showToast('Statements downloaded')" class="w-full p-4 flex items-center justify-between border-b border-white/5 btn-press">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-file-alt text-gray-400"></i>
+                    <span>Statements</span>
+                </div>
+                <i class="fas fa-chevron-right text-gray-600 text-sm"></i>
+            </button>
+            <button onclick="logout()" class="w-full p-4 flex items-center justify-between text-rose-400 btn-press">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </div>
+                <i class="fas fa-chevron-right text-gray-600 text-sm"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- SUCCESS MODAL -->
+    <div id="successModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden items-center justify-center p-6">
+        <div class="glass-panel rounded-3xl p-8 max-w-sm w-full text-center animate-slide-up">
+            <div class="success-check mx-auto mb-4">
+                <i class="fas fa-check text-3xl text-white"></i>
+            </div>
+            <h3 class="text-2xl font-bold mb-2" id="successTitle">Success!</h3>
+            <p class="text-gray-400 mb-6" id="successMessage">Transaction completed successfully</p>
+            <button onclick="closeSuccess()" class="w-full card-gradient text-white font-bold py-4 rounded-xl btn-press">
+                Done
+            </button>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-2xl z-[70] hidden items-center gap-2 text-sm font-medium border border-white/10">
+        <i class="fas fa-info-circle text-blue-400"></i>
+        <span id="toastMessage">Notification</span>
+    </div>
+
+    <!-- BOTTOM NAV (Only show on home) -->
+    <div id="bottomNav" class="fixed bottom-0 left-0 right-0 bg-[#0f172a]/95 backdrop-blur-xl border-t border-white/5 px-6 py-4 max-w-md mx-auto hidden">
+        <div class="flex justify-between items-center relative">
+            <button onclick="navigateTo('homePage'); setActiveNav(this)" class="nav-item active relative flex flex-col items-center gap-1 w-16 text-blue-400">
+                <i class="fas fa-home text-xl"></i>
+                <span class="text-[10px] font-medium">Home</span>
+            </button>
+            <button onclick="showToast('Cards section coming soon'); setActiveNav(this)" class="nav-item relative flex flex-col items-center gap-1 w-16 text-gray-500">
+                <i class="fas fa-credit-card text-xl"></i>
+                <span class="text-[10px] font-medium">Cards</span>
+            </button>
+            
+            <button onclick="navigateTo('sendPage')" class="w-14 h-14 rounded-full gold-gradient flex items-center justify-center text-white shadow-lg shadow-yellow-500/30 -mt-6 transform hover:scale-105 transition-transform btn-press">
+                <i class="fas fa-plus text-xl"></i>
+            </button>
+            
+            <button onclick="showToast('Analytics coming soon'); setActiveNav(this)" class="nav-item relative flex flex-col items-center gap-1 w-16 text-gray-500">
+                <i class="fas fa-chart-pie text-xl"></i>
+                <span class="text-[10px] font-medium">Stats</span>
+            </button>
+            <button onclick="navigateTo('morePage'); setActiveNav(this)" class="nav-item relative flex flex-col items-center gap-1 w-16 text-gray-500">
+                <i class="fas fa-user text-xl"></i>
+                <span class="text-[10px] font-medium">Profile</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- INSTALL BANNER -->
+    <div id="installBanner" class="ios-install-banner">
+        <div class="flex items-start gap-3">
+            <div class="w-12 h-12 rounded-xl gold-gradient flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-university text-white text-xl"></i>
+            </div>
+            <div class="flex-1">
+                <h4 class="font-bold text-sm mb-1">Install Prosperity Bank</h4>
+                <p class="text-xs text-gray-400 mb-3">Add to Home Screen for quick access</p>
+                <div class="flex gap-2">
+                    <button onclick="installApp()" class="flex-1 bg-blue-500 text-white text-xs font-bold py-2 rounded-lg btn-press">Install</button>
+                    <button onclick="dismissInstall()" class="flex-1 bg-white/10 text-gray-400 text-xs font-bold py-2 rounded-lg btn-press">Later</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Clock update
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Navigation
+        function navigateTo(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+            
+            // Show/hide bottom nav
+            const bottomNav = document.getElementById('bottomNav');
+            if (pageId === 'homePage') {
+                bottomNav.classList.remove('hidden');
+            } else {
+                bottomNav.classList.add('hidden');
+            }
+            
+            window.scrollTo(0, 0);
+        }
+
+        function setActiveNav(element) {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active', 'text-blue-400');
+                item.classList.add('text-gray-500');
+            });
+            element.classList.add('active', 'text-blue-400');
+            element.classList.remove('text-gray-500');
+        }
+
+        // Login System
+        function togglePassword() {
+            const pass = document.getElementById('password');
+            const icon = document.getElementById('passIcon');
+            if (pass.type === 'password') {
+                pass.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                pass.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        function login() {
+            const userId = document.getElementById('userId').value;
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('loginBtn');
+            const text = document.getElementById('loginText');
+            const loader = document.getElementById('loginLoader');
+
+            if (!userId || !password) {
+                showToast('Please enter User ID and Password');
+                return;
+            }
+
+            // Show loading
+            text.classList.add('hidden');
+            loader.classList.remove('hidden');
+            btn.disabled = true;
+
+            setTimeout(() => {
+                if (userId === 'Daviskyrah088$' && password === 'Oluwaseun088$') {
+                    showToast('Login successful! Welcome Davis Kyrah');
+                    setTimeout(() => {
+                        navigateTo('homePage');
+                        document.getElementById('bottomNav').classList.remove('hidden');
+                        text.classList.remove('hidden');
+                        loader.classList.add('hidden');
+                        btn.disabled = false;
+                    }, 500);
+                } else {
+                    showToast('Invalid credentials. Try again.');
+                    text.classList.remove('hidden');
+                    loader.classList.add('hidden');
+                    btn.disabled = false;
+                }
+            }, 1500);
+        }
+
+        function logout() {
+            document.getElementById('userId').value = '';
+            document.getElementById('password').value = '';
+            navigateTo('loginPage');
+            document.getElementById('bottomNav').classList.add('hidden');
+            showToast('Logged out successfully');
+        }
+
+        // Balance toggle
+        let balanceVisible = true;
+        function toggleBalance() {
+            const balanceEl = document.getElementById('balanceAmount');
+            const eyeIcon = document.getElementById('eyeIcon');
+            
+            balanceVisible = !balanceVisible;
+            
+            if (balanceVisible) {
+                balanceEl.textContent = '$94,000.00';
+                balanceEl.classList.remove('hide-balance');
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            } else {
+                balanceEl.textContent = '•••••••';
+                balanceEl.classList.add('hide-balance');
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            }
+        }
+
+        // Transactions
+        function selectRecipient(name) {
+            if (name === 'Add New') {
+                showToast('Add new recipient feature coming soon');
+            } else {
+                showToast(`Selected ${name}`);
+            }
+        }
+
+        function processTransaction(type) {
+            const btn = document.getElementById(type + 'Btn');
+            const text = document.getElementById(type + 'Text');
+            const loader = document.getElementById(type + 'Loader');
+            
+            text.classList.add('hidden');
+            loader.classList.remove('hidden');
+            btn.disabled = true;
+
+            setTimeout(() => {
+                text.classList.remove('hidden');
+                loader.classList.add('hidden');
+                btn.disabled = false;
+                
+                let title = 'Success!';
+                let message = 'Transaction completed successfully';
+                
+                if (type === 'send') {
+                    title = 'Money Sent!';
+                    message = 'Your transfer has been processed';
+                } else if (type === 'request') {
+                    title = 'Request Sent!';
+                    message = 'Payment request has been sent';
+                } else if (type === 'exchange') {
+                    title = 'Exchange Complete!';
+                    message = 'Currency exchanged successfully';
+                }
+                
+                showSuccess(title, message);
+            }, 2000);
+        }
+
+        function showSuccess(title, message) {
+            document.getElementById('successTitle').textContent = title;
+            document.getElementById('successMessage').textContent = message;
+            document.getElementById('successModal').classList.remove('hidden');
+            document.getElementById('successModal').classList.add('flex');
+        }
+
+        function closeSuccess() {
+            document.getElementById('successModal').classList.add('hidden');
+            document.getElementById('successModal').classList.remove('flex');
+            navigateTo('homePage');
+        }
+
+        function showTransactionDetail(title, amount, category) {
+            showToast(`${title}: ${amount} (${category})`);
+        }
+
+        // Toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.remove('hidden');
+            toast.classList.add('flex');
+            
+            setTimeout(() => {
+                toast.classList.add('hidden');
+                toast.classList.remove('flex');
+            }, 3000);
+        }
+
+        // Install Banner
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            setTimeout(() => {
+                document.getElementById('installBanner').classList.add('show');
+            }, 3000);
+        });
+
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        showToast('Prosperity Bank installed!');
+                    }
+                    deferredPrompt = null;
+                });
+            } else {
+                showToast('Tap "Share" then "Add to Home Screen"');
+            }
+            document.getElementById('installBanner').classList.remove('show');
+        }
+
+        function dismissInstall() {
+            document.getElementById('installBanner').classList.remove('show');
+        }
+
+        // Check if running as installed PWA
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            console.log('Running as installed app');
+        }
+
+        // Enter key support for login
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+    </script>
+</body>
+</html>
